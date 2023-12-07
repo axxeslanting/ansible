@@ -1,5 +1,5 @@
 # Ansible config for Linux Laptops
-This repository contains ansible configuration to configure Linux laptops by using ansible pull.
+This repository contains ansible configuration to configure Linux laptops (Ubuntu 22.04 LTS) by using ansible pull.
 The default playbook configures a basic environment for everyone, additional packages for developers are available.
 
 **default environment:**\
