@@ -1,5 +1,5 @@
 ---
-- name: Setup Linux Laptop for Infra League members
+- name: Setup Linux Laptops
   hosts: localhost
   vars:
     developer: false
@@ -50,17 +50,17 @@
     - name: Install AWS CLI v2
       when: "not aws_path.stat.exists"
       block:
-        - name: pull zip file
+        - name: "Installing AWS CLI v2: pull zip file"
           ansible.builtin.command: curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
 
-        - name: unzip file
+        - name: "Installing AWS CLI v2: unzip file"
           ansible.builtin.command: unzip awscliv2.zip
 
-        - name: run installer
+        - name: "Installing AWS CLI v2: run installer"
           become: true
           ansible.builtin.command: ./aws/install
 
-        - name: Cleanup files
+        - name: Removing/cleanup installation files
           ansible.builtin.file:
             path: "{{ item }}"
             state: absent
@@ -71,17 +71,17 @@
     - name: Block for Developers
       when: developer == "true"
       block:
-        - name: Gather package facts
+        - name: "For Developers: Gather package facts"
           become: true
           ansible.builtin.package_facts:
             manager: auto
 
-        - name: Adding Node.js requirement for developers
+        - name: "For Developers: Adding Node.js requirements"
           become: true
           ansible.builtin.shell: curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
           when: "'nodejs' not in ansible_facts['packages']"
 
-        - name: Adding required repos
+        - name: "For Developers: Adding required repos"
           become: true
           ansible.builtin.deb822_repository:
             name: mongodb-org-7.0
@@ -91,12 +91,12 @@
             architectures: "{{ archresult['stdout'] }}"
             signed_by: https://pgp.mongodb.com/server-7.0.asc
 
-        - name: apt-get update
+        - name: "For Developers: apt-get update"
           become: true
           ansible.builtin.apt:
             update_cache: yes
 
-        - name: Installing additional packages for developers
+        - name: "For Developers: Installing additional packages"
           become: true
           ansible.builtin.apt:
             name: "{{ dev_packages }}"
