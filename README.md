@@ -5,7 +5,7 @@ The default playbook configures a basic environment for everyone, additional pac
 **default environment:**\
 ansible-pull -U https://github.com/axxeslanting/ansible
 
-**additional packages for developers:**\
+**default environment + additional packages for developers:**\
 ansible-pull -U https://github.com/axxeslanting/ansible -e developer=true
 
 NOTE:\
