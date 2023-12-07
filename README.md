@@ -8,7 +8,7 @@ ansible-pull -U https://github.com/axxeslanting/ansible
 **default environment + additional packages for developers:**\
 ansible-pull -U https://github.com/axxeslanting/ansible -e developer=true
 
-NOTE:\
+**NOTE:**\
 openjdk-16-jdk has been superseded, it is not installed by this playbook.\
 https://jdk.java.net/16/
 
