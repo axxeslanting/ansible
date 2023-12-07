@@ -1,0 +1,122 @@
+---
+- name: Setup Linux Laptop for Infra League members
+  hosts: localhost
+  vars:
+    developer: false
+  tasks:
+    - name: Determine CPU architecture for repos
+      ansible.builtin.shell: dpkg --print-architecture
+      register: archresult
+
+    - name: Adding required repos
+      become: true
+      ansible.builtin.deb822_repository:
+        name: "{{ item['name'] }}"
+        uris: "{{ item['repo_url'] }}"
+        suites: "{{ item['suites'] }}"
+        components: "{{ item['components'] }}"
+        architectures: "{{ archresult['stdout'] }}"
+        signed_by: "{{ item['key_url'] }}"
+      loop: "{{ repos }}"
+
+    - name: apt-get update
+      become: true
+      ansible.builtin.apt:
+        update_cache: yes
+
+    - name: Installing apt packages
+      become: true
+      ansible.builtin.apt:
+        name: "{{ packages }}"
+        state: latest
+
+    - name: Installing snap packages
+      become: true
+      community.general.snap:
+        name: microk8s
+        classic: true
+
+    - name: Installing JetBrains Toolbox
+      ansible.builtin.shell: curl -fsSL https://raw.githubusercontent.com/nagygergo/jetbrains-toolbox-install/master/jetbrains-toolbox.sh | bash
+      args:
+        creates: /home/{{ ansible_facts['user_id'] }}/.local/share/JetBrains/Toolbox/bin/jetbrains-toolbox
+
+    - name: Check if AWS CLI v2 exists
+      become: true
+      ansible.builtin.stat:
+        path: /usr/local/aws-cli/v2/current
+      register: aws_path
+
+    - name: Install AWS CLI v2
+      when: "not aws_path.stat.exists"
+      block:
+        - name: pull zip file
+          ansible.builtin.command: curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+
+        - name: unzip file
+          ansible.builtin.command: unzip awscliv2.zip
+
+        - name: run installer
+          become: true
+          ansible.builtin.command: ./aws/install
+
+        - name: Cleanup files
+          ansible.builtin.file:
+            path: "{{ item }}"
+            state: absent
+          loop:
+            - awscliv2.zip
+            - aws
+
+    - name: Block for Developers
+      when: developer == "true"
+      block:
+        - name: Gather package facts
+          become: true
+          ansible.builtin.package_facts:
+            manager: auto
+
+        - name: Adding Node.js requirement for developers
+          become: true
+          ansible.builtin.shell: curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+          when: "'nodejs' not in ansible_facts['packages']"
+
+        - name: Adding required repos
+          become: true
+          ansible.builtin.deb822_repository:
+            name: mongodb-org-7.0
+            uris: https://repo.mongodb.org/apt/ubuntu
+            suites: jammy/mongodb-org/7.0
+            components: multiverse
+            architectures: "{{ archresult['stdout'] }}"
+            signed_by: https://pgp.mongodb.com/server-7.0.asc
+
+        - name: apt-get update
+          become: true
+          ansible.builtin.apt:
+            update_cache: yes
+
+        - name: Installing additional packages for developers
+          become: true
+          ansible.builtin.apt:
+            name: "{{ dev_packages }}"
+            state: latest
+
+    - name: Modifying user groups for {{ ansible_facts['user_id'] }}
+      become: true
+      ansible.builtin.user:
+        name: "{{ ansible_facts['user_id'] }}"
+        groups:
+          - docker
+          - microk8s
+        append: yes
+
+    - name: Setting up MicroK8s
+      become: true
+      ansible.builtin.command:
+        cmd: "{{ item }}"
+      loop: "{{ cmds }}"
+
+    - name: Print Reboot required information
+      ansible.builtin.debug:
+        msg: "Please reboot your machine to apply all changes!"

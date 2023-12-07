@@ -1,0 +1,41 @@
+---
+packages:
+  - libfuse2
+  - vim
+  - apt-transport-https
+  - code
+  - docker-ce 
+  - docker-ce-cli
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin
+  - google-chrome-stable
+
+dev_packages:
+  - openjdk-8-jdk
+  - maven
+  - gradle
+  - mysql-server
+  - mongodb-org
+  - nodejs
+
+repos:
+  - name: google-chrome
+    repo_url: https://dl.google.com/linux/chrome/deb
+    suites: stable
+    components: main
+    key_url: https://dl-ssl.google.com/linux/linux_signing_key.pub
+  - name: docker
+    repo_url: https://download.docker.com/linux/ubuntu
+    suites: jammy
+    components: stable
+    key_url: https://download.docker.com/linux/ubuntu/gpg
+  - name: vscode
+    repo_url: https://packages.microsoft.com/repos/code
+    suites: stable
+    components: main
+    key_url: https://packages.microsoft.com/keys/microsoft.asc
+
+cmds:
+  - microk8s status --wait-ready
+  - microk8s enable storage dns
