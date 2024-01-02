@@ -51,25 +51,29 @@
       when: "not aws_path.stat.exists"
       block:
         - name: "Installing AWS CLI v2: pull zip file"
-          ansible.builtin.command: curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          ansible.builtin.get_url:
+            url: https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip
+            dest: /var/tmp/awscliv2.zip
 
         - name: "Installing AWS CLI v2: unzip file"
-          ansible.builtin.command: unzip awscliv2.zip
+          ansible.builtin.unarchive:
+            src: /var/tmp/awscliv2.zip
+            dest: /var/tmp
 
         - name: "Installing AWS CLI v2: run installer"
           become: true
-          ansible.builtin.command: ./aws/install
+          ansible.builtin.command: /var/tmp/aws/install
 
         - name: Removing/cleanup installation files
           ansible.builtin.file:
             path: "{{ item }}"
             state: absent
           loop:
-            - awscliv2.zip
-            - aws
+            - /var/tmp/awscliv2.zip
+            - /var/tmp/aws
 
     - name: Block for Developers
-      when: developer == "true"
+      when: developer | bool
       block:
         - name: "For Developers: Gather package facts"
           become: true
